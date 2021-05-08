@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+<body>
+  <h1>文件云-juln创建的一款云网站</h1>
+
+  <div class="files-show">
+    <h2>当前目录</h2>
+    <ul>
+      
+    </ul>
+  </div>
+
+  <div class="file-upload">
+    <h2>上传文件</h2>
+    <input type="file"/>
+    <span class="upload-status">尚未选择文件</span>
+  </div>
+</body>
+<script src="/js/axios.min.js"></script>
+<script>
+  const $ = str => document.querySelector(str)
+  const ul = $('.files-show ul')
+
+  function handleDelFile(e) {
+    const filename = e.target.dataset.filename
+    axios.get(`/del-file?filename=${filename}`).then(res => res.data).then(res => {
+      if(res.msg === 'ok') {
+        alert('删除成功')
+        showFiles()
+      }
+    })
+  }
+
+  // files-show部分
+  function showFiles() {
+    ul.innerHTML = '加载中...'
+    axios.get('/file-list').then(res => res.data).then(res => {
+      if(!res.length) {
+        ul.innerHTML = '暂无数据...'
+        return
+      }
+      ul.innerHTML = ''
+      res.forEach(filename => {
+        console.log(filename)
+        const li = document.createElement('li')
+        const span = document.createElement('span')
+        const downloadBtn = document.createElement('button')
+        const previewBtn = document.createElement('button')
+        const delBtn = document.createElement('button')
+        span.classList.add('filename')
+        span.textContent = filename
+        downloadBtn.classList.add('download-btn')
+        downloadBtn.innerHTML = `<a href="/download?filename=${filename}">下载</a>`
+        previewBtn.innerHTML = `<a href="/files/${filename}" target="_blank">预览</a>`
+        delBtn.textContent = '删除文件'
+        delBtn.dataset.filename = filename
+        delBtn.onclick = handleDelFile
+        li.append(span, downloadBtn, previewBtn, delBtn)
+        ul.append(li)
+      })
+    })
+  }
+  showFiles()
+
+  // file-upload部分
+  $('.file-upload input[type=file]').onchange = function(e) {
+    const file = e.target.files[0]
+    if(!file) return
+
+    $('.upload-status').textContent = '上传中...'
+
+    const formData = new FormData()
+    formData.append('file', file)
+    axios.post('/upload', formData).then(res => res.data).then(res => {
+      if(res.msg === 'ok') {
+        $('.upload-status').textContent = '上传成功'
+        showFiles()
+      }
+    })
+  }
+
+</script>
+</html>
